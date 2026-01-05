@@ -29,33 +29,38 @@ func LaunchClient(serverAddr string) {
 	decoder := gob.NewDecoder(conn)
 
 	for {
+		// 1. Recevoir le travail
 		var msg NetworkMessage
 		err := decoder.Decode(&msg)
-		if err != nil { return }
+		if err != nil {
+			fmt.Println("Serveur perdu !")
+			return
+		}
 
 		candidate := msg.Organism
-		
-		// Logique V2
+		attempts++
+
+		// 2. Muter
 		progress := float64(len(candidate.DNA)) / TargetComplexity
 		if progress > 1.0 { progress = 1.0 }
-
 		Mutate(&candidate, targetImg, progress)
 
-		// --- OPTIMISATION V2 : On dessine sur le buffer existant ---
+		// 3. Rendu & Score
 		RenderToBuffer(candidate.DNA, workBuffer, avgColor)
-
-		// Calcul du score
 		candidate.Score = DiffEuclidienne(workBuffer, targetImg)
 
-		// Envoi si mieux (ou toujours, selon ta stratégie)
+		// 4. Renvoyer et LOGGUER
 		if candidate.Score < msg.Organism.Score {
-			err = encoder.Encode(NetworkMessage{Organism: candidate})
-			if err != nil { return }
+			// SUCCÈS : On affiche un message vert (ou juste du texte)
+			fmt.Printf("[Test %d] ✨ J'ai trouvé mieux ! Score: %.0f\n", attempts, candidate.Score)
+			encoder.Encode(NetworkMessage{Organism: candidate})
 		} else {
-            // Important: Renvoyer quelque chose pour que le serveur ne bloque pas
-            // On renvoie l'original non modifié pour dire "échec"
-             err = encoder.Encode(NetworkMessage{Organism: candidate})
-             if err != nil { return }
-        }
+			// ÉCHEC : On affiche juste un petit point pour dire "je suis en vie"
+			// (Astuce : on n'affiche un point que tous les 100 échecs pour pas spammer)
+			if attempts%100 == 0 {
+				fmt.Print(".") 
+			}
+			encoder.Encode(NetworkMessage{Organism: candidate})
+		}
 	}
 }
