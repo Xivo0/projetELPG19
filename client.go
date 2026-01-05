@@ -8,64 +8,71 @@ import (
 )
 
 func LaunchClient(serverAddr string) {
-	fmt.Println("=== CLIENT OPTIMISÉ ===")
+	fmt.Println("=== MODE CLIENT (V2 + BATCHING) ===")
 
-	targetImg := LoadImage("target.png") // Fonction LoadImage définie dans server.go ou common.go
+	// ... (Chargement image et initialisation identiques) ...
+	targetImg := LoadImage(InputFile)
 	MaxX = targetImg.Bounds().Dx()
 	MaxY = targetImg.Bounds().Dy()
-
-	// Calcul de la couleur moyenne (nécessaire pour effacer le buffer correctement)
 	avgColor := ComputeAverageColor(targetImg)
-
-	// --- OPTIMISATION V2 : Buffer réutilisable ---
-	// On alloue l'image de travail UNE SEULE FOIS ici
 	workBuffer := image.NewRGBA(targetImg.Bounds())
 
 	conn, err := net.Dial("tcp", serverAddr)
-	if err != nil {
-		panic(err)
-	}
+	if err != nil { panic(err) }
 	defer conn.Close()
-
+	
 	encoder := gob.NewEncoder(conn)
 	decoder := gob.NewDecoder(conn)
 
+	// CONFIGURATION DU BATCH
+	// Le client va faire 500 essais avant de parler au serveur
+	const BatchSize = 500 
+
 	for {
+		// 1. Recevoir le point de départ du serveur
 		var msg NetworkMessage
 		err := decoder.Decode(&msg)
-		if err != nil {
-			return
-		}
+		if err != nil { return }
 
-		candidate := msg.Organism
+		// On garde le meilleur localement pour ce lot
+		bestLocalCandidate := msg.Organism
+		
+		// 2. BOUCLE DE TRAVAIL LOCAL (Le Batch)
+		for i := 0; i < BatchSize; i++ {
+			// On part toujours du meilleur candidat connu (local ou serveur)
+			candidate := bestLocalCandidate // Copie simple car Organism ne contient pas de pointeurs complexes (sauf slice DNA)
+			
+			// Attention : Il faut cloner le DNA pour ne pas modifier l'original par erreur
+			// Go est tricky avec les slices :
+			newDNA := make([]Shape, len(bestLocalCandidate.DNA))
+			copy(newDNA, bestLocalCandidate.DNA)
+			candidate.DNA = newDNA
 
-		// Logique V2
-		progress := float64(len(candidate.DNA)) / TargetComplexity
-		if progress > 1.0 {
-			progress = 1.0
-		}
+			// Mutation
+			progress := float64(len(candidate.DNA)) / TargetComplexity
+			if progress > 1.0 { progress = 1.0 }
+			Mutate(&candidate, targetImg, progress)
 
-		Mutate(&candidate, targetImg, progress)
+			// Rendu
+			RenderToBuffer(candidate.DNA, workBuffer, avgColor)
+			candidate.Score = DiffEuclidienne(workBuffer, targetImg)
 
-		// --- OPTIMISATION V2 : On dessine sur le buffer existant ---
-		RenderToBuffer(candidate.DNA, workBuffer, avgColor)
-
-		// Calcul du score
-		candidate.Score = DiffEuclidienne(workBuffer, targetImg)
-
-		// Envoi si mieux (ou toujours, selon ta stratégie)
-		if candidate.Score < msg.Organism.Score {
-			err = encoder.Encode(NetworkMessage{Organism: candidate})
-			if err != nil {
-				return
+			// Si c'est mieux que notre meilleur local, on le garde
+			if candidate.Score < bestLocalCandidate.Score {
+				bestLocalCandidate = candidate
 			}
+		}
+
+		// 3. Fin du Batch : On envoie le résultat au serveur
+		// On renvoie le meilleur qu'on a trouvé sur 500 essais
+		if bestLocalCandidate.Score < msg.Organism.Score {
+			// On a trouvé une pépite !
+			encoder.Encode(NetworkMessage{Organism: bestLocalCandidate})
+			fmt.Printf("✨ Envoi amélioration (Score %.0f)\n", bestLocalCandidate.Score)
 		} else {
-			// Important: Renvoyer quelque chose pour que le serveur ne bloque pas
-			// On renvoie l'original non modifié pour dire "échec"
-			err = encoder.Encode(NetworkMessage{Organism: candidate})
-			if err != nil {
-				return
-			}
+			// Rien trouvé d'intéressant dans ce lot, on renvoie l'original
+			// pour dire au serveur qu'on est prêt pour la suite
+			encoder.Encode(NetworkMessage{Organism: msg.Organism})
 		}
 	}
 }
