@@ -198,11 +198,21 @@ func NewRandomShape(target *image.RGBA) Shape {
 func LoadImage(path string) *image.RGBA {
 	f, err := os.Open(path)
 	if err != nil {
-		// Image vide par défaut pour éviter le crash si pas de fichier
-		return image.NewRGBA(image.Rect(0, 0, 200, 200))
+		// STOP TOUT ! Affiche l'erreur critique
+		fmt.Println("ERREUR CRITIQUE : Impossible de trouver l'image :", path)
+		fmt.Println("Vérifie que le fichier 'target.png' est bien dans ce dossier :")
+		dir, _ := os.Getwd()
+		fmt.Println(dir)
+		panic(err) // Arrête le programme brutalement
 	}
 	defer f.Close()
-	src, _, _ := image.Decode(f)
+
+	src, _, err := image.Decode(f)
+	if err != nil {
+		fmt.Println("ERREUR : L'image n'est pas un PNG valide !")
+		panic(err)
+	}
+
 	b := src.Bounds()
 	rgba := image.NewRGBA(b)
 	draw.Draw(rgba, b, src, b.Min, draw.Src)
