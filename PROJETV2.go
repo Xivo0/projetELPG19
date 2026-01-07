@@ -110,15 +110,15 @@ func NewRandomShape(target *image.RGBA) Shape {
 	}
 }
 
-// RenderToBuffer : Dessine l'ADN sur une image existante (Pas d'allocation mémoire !)
+// RenderToBuffer : Dessine l'ADN sur une image existante (Pas d'allocation mémoire en recalculant une image, une "image effacable par worker")
 func RenderToBuffer(dna []Shape, img *image.RGBA, bg color.RGBA) {
 	// 1. Reset rapide du fond (memset style)
 	bgR, bgG, bgB := bg.R, bg.G, bg.B
-	for i := 0; i < len(img.Pix); i += 4 {
-		img.Pix[i+0] = bgR
+	for i := 0; i < len(img.Pix); i += 4 { // RGBA = 4 bytes (ici des itérations) par pixel
+		img.Pix[i+0] = bgR 
 		img.Pix[i+1] = bgG
 		img.Pix[i+2] = bgB
-		img.Pix[i+3] = 255 // Opaque
+		img.Pix[i+3] = 255 // Alpha opaque
 	}
 
 	// 2. Dessin des formes
@@ -127,56 +127,53 @@ func RenderToBuffer(dna []Shape, img *image.RGBA, bg color.RGBA) {
 	}
 }
 
-// drawShape : Version haute performance
-func drawShape(img *image.RGBA, s Shape) {
-	// Bounding Box
+func drawShape(img *image.RGBA, s Shape) { //on dessine une forme sur l'image
+	// Bounding Box : au lieu de parcourir toute l'image (et perdre du temps de calcul), on se limite au carré minimal qui contient la forme
 	minX, maxX := s.X-s.Radius, s.X+s.Radius
 	minY, maxY := s.Y-s.Radius, s.Y+s.Radius
 
-	bounds := img.Bounds()
+	bounds := img.Bounds() // Récupération du carré minimal pour ne pas sortir de l'image
 	if minX < 0 {
 		minX = 0
 	}
 	if minY < 0 {
 		minY = 0
 	}
-	if maxX > bounds.Max.X {
+	if maxX > bounds.Max.X { // Si la forme dépasse, on clamp : ie on ne sort pas de l'image
 		maxX = bounds.Max.X
 	}
 	if maxY > bounds.Max.Y {
 		maxY = bounds.Max.Y
 	}
 
-	// Pré-calculs
-	radiusSq := s.Radius * s.Radius
-	srcR, srcG, srcB, alpha := int(s.Color.R), int(s.Color.G), int(s.Color.B), int(s.Color.A)
+	// Pré-calculs 
+	radiusSq := s.Radius * s.Radius // Pour le cercle
+	srcR, srcG, srcB, alpha := int(s.Color.R), int(s.Color.G), int(s.Color.B), int(s.Color.A) // Couleur source et alpha
 	invAlpha := 255 - alpha
 
-	// Boucle Pixel
+	//on parcourt chaque pixel de la bounding box pour dessiner la forme
 	for y := minY; y < maxY; y++ {
-		// Optimisation: Offset de ligne
-		lineOffset := y * img.Stride
+		lineOffset := y * img.Stride //pour trouver le début de la ligne
 		
-		// Optimisation Cercle
-		dy := y - s.Y
-		dy2 := dy * dy
+		// Optimisation du cercle
+		dy := y - s.Y // Distance verticale au centre ie (y - centreY)
+		dy2 := dy * dy // Carré de la distance verticale
 
 		for x := minX; x < maxX; x++ {
-			// Logique Géométrique
+			// Logique Géométrique pour vérifier si on est dans la forme
 			if s.Type == ShapeTypeCircle {
-				dx := x - s.X
+				dx := x - s.X //
 				if dx*dx+dy2 > radiusSq {
 					continue // Hors du cercle
 				}
 			}
 			// Si Rectangle, on dessine tout ce qui est dans la boucle
 
-			// Logique de Blending (Mélange) rapide
-			offset := lineOffset + (x * 4)
+			// Logique de Blending (Mélange) : on veux du "alpha blending" pour gérer la transparence
+			offset := lineOffset + (x * 4) // Position du  (x,y) dans Pix[]
 
-			// Formule: (Src * A + Dst * (255-A)) / 255
-			// Note: On cast en int pour éviter l'overflow avant la division
-			r := (srcR*alpha + int(img.Pix[offset+0])*invAlpha) / 255
+			// Formule: (Src * A + Dst * (255-A)) / 255 ou Src et Dst sont les couleurs source et destination
+			r := (srcR*alpha + int(img.Pix[offset+0])*invAlpha) / 255 
 			g := (srcG*alpha + int(img.Pix[offset+1])*invAlpha) / 255
 			b := (srcB*alpha + int(img.Pix[offset+2])*invAlpha) / 255
 
@@ -188,7 +185,7 @@ func drawShape(img *image.RGBA, s Shape) {
 	}
 }
 
-func DiffEuclidienne(img1, img2 *image.RGBA) float64 {
+func DiffEuclidienne(img1, img2 *image.RGBA) float64 { //Calcul de la différence entre deux images
 	var totalDiff float64 = 0.0
 
 	// On suppose que les images ont la même taille (garanti par le code)
