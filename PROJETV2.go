@@ -286,7 +286,7 @@ func (o Organism) Copy() Organism {
 func Worker(id int, jobs <-chan Job, results chan<- Result, targetImg *image.RGBA, bgCol color.RGBA) {
 	// ! CRUCIAL : Allocation unique du buffer de travail par Worker !
 	// On réutilise cette image pour dessiner, au lieu d'en créer une nouvelle à chaque fois.
-	myBuffer := image.NewRGBA(targetImg.Bounds())
+	myBuffer := image.NewRGBA(targetImg.Bounds()) // On alloue (résolution_en_pixels * 4 octets, 4 octets pour RGBA)
 
 	// Utilisation d'une source aléatoire locale si on voulait (ici global rand est ok pour simplicité)
 	
@@ -294,24 +294,27 @@ func Worker(id int, jobs <-chan Job, results chan<- Result, targetImg *image.RGB
 		candidate := job.BestOrganism.Copy()
 
 		// Mutation adaptative
-		progress := float64(len(candidate.DNA)) / TargetComplexity
+		progress := float64(len(candidate.DNA)) / TargetComplexity // TargetComplexity = nombre de formes max/objectif
+		//progress commence de 0 environ et se rapproche de 1 (0% à 100% de complétion grosso-modo)
 		if progress > 1.0 { progress = 1.0 }
 		
 		Mutate(&candidate, targetImg, progress)
 
-		// Rendu sur notre buffer "effaçable"
-		RenderToBuffer(candidate.DNA, myBuffer, bgCol)
+		// Rendu sur notre buffer "effaçable", le programme lit les vecteurs du DNA
+		// il écrit les pixels correspondants directement dans la zone mémoire de myBuffer
+		// (il écrase les pixels de la boucle précédente, on a du recyclage)
+		RenderToBuffer(candidate.DNA, myBuffer, bgCol) 
 
 		// Calcul du score sur le buffer
 		candidate.Score = DiffEuclidienne(myBuffer, targetImg)
 
-		isBetter := candidate.Score < job.BestOrganism.Score
+		isBetter := candidate.Score < job.BestOrganism.Score // plus on est proche de 0, mieux c'est
 
 		if isBetter {
 			// Si c'est mieux, on doit cloner l'image pour l'envoyer au Main
 			// (Car myBuffer va être effacé au prochain tour)
 			// Petite optimisation : on ne clone que si nécessaire
-			finalImg := image.NewRGBA(myBuffer.Bounds())
+			finalImg := image.NewRGBA(myBuffer.Bounds()) // On alloue encore pour sauvegarder (résolution_en_pixels * 4 octets, 4 octets pour RGBA)
 			copy(finalImg.Pix, myBuffer.Pix)
 			candidate.Image = finalImg
 		} else {
