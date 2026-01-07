@@ -326,7 +326,7 @@ func Worker(id int, jobs <-chan Job, results chan<- Result, targetImg *image.RGB
 // 4. MAIN
 // ==========================================
 
-unc main() {
+func main() {
 	// 1. Initialisation
 	rand.Seed(time.Now().UnixNano())// Initialise le générateur pseudo-aléatoire global : faire en sorte qu'il n'y ai pas a chaque fois EXACTEMENT la même évolution
 
