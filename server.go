@@ -12,7 +12,7 @@ import (
 
 var (
 	bestOrganism Organism
-	bestMutex    sync.Mutex
+	bestMutex    sync.Mutex //Sert pour le Lock/Delock pour empecher une double execution
 	avgColor     color.RGBA // Couleur de fond
 )
 
@@ -25,7 +25,7 @@ func LaunchServer() {
 	MaxY = targetImg.Bounds().Dy()
 	fmt.Printf("Cible: %dx%d\n", MaxX, MaxY)
 
-	// 2. Calculer la couleur moyenne (Fond)
+	// 2. Calculer la couleur moyenne (Fond) Pour démarrer les calculs (car on a un score de base réduit comparé à une image noire)
 	avgColor = ComputeAverageColor(targetImg)
 
 	// 3. Initialiser le premier organisme (Vide mais scoré correctement)
@@ -38,7 +38,7 @@ func LaunchServer() {
 	fmt.Printf("Score initial (Fond uni) : %.0f\n", startScore)
 
 	// 4. Réseau
-	ln, err := net.Listen("tcp", ":8080")
+	ln, err := net.Listen("tcp", ":8080")//à expliquer les fonctions réseau
 	if err != nil { panic(err) }
 	fmt.Println("En attente de clients sur le port 8080...")
 
@@ -55,6 +55,7 @@ func handleClient(conn net.Conn, generation *int) {
 	encoder := gob.NewEncoder(conn)
 	decoder := gob.NewDecoder(conn)
 
+	//A EXPLIQUER TOUT LE RESTE
 	for {
 		// A. Envoyer
 		bestMutex.Lock()
