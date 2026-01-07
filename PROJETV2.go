@@ -211,22 +211,22 @@ func Mutate(o *Organism, target *image.RGBA, progress float64) {
 		currentMaxRadius = MinRadius
 	}
 
-	roulette := rand.Float64()
+	roulette := rand.Float64() // nombre réel entre 0 et 1
 
-	// 1. AJOUT (Plus fréquent au début)
+	// 1. Ajout d'une forme (Plus fréquent et utilisé au début)
 	if len(o.DNA) == 0 || roulette < 0.1 {
 		o.DNA = append(o.DNA, NewRandomShape(target))
 		return
 	}
 
-	// 2. SUPPRESSION (Rare)
+	// 2. Suppression d'une forme
 	if roulette < 0.15 {
 		index := rand.Intn(len(o.DNA))
 		o.DNA = append(o.DNA[:index], o.DNA[index+1:]...)
 		return
 	}
 
-	// 3. ÉCHANGE DE POSITION (Z-INDEX)
+	// 3. Echange de la position de 2 formes
 	if roulette < 0.20 {
 		i1 := rand.Intn(len(o.DNA))
 		i2 := rand.Intn(len(o.DNA))
@@ -234,26 +234,26 @@ func Mutate(o *Organism, target *image.RGBA, progress float64) {
 		return
 	}
 
-	// 4. MODIFICATION (Le plus fréquent)
+	// 4. Modficiation d'une forme aléatoire
 	index := rand.Intn(len(o.DNA))
 	s := &o.DNA[index]
 
 	switch rand.Intn(4) { // 4 types de modifs
-	case 0: // Position
-		s.X += rand.Intn(21) - 10
+	case 0: // Position, déplacement de la forme de +/- 10 pixels (horizontal et vertical)
+		s.X += rand.Intn(21) - 10 
 		s.Y += rand.Intn(21) - 10
-		// Clamp
+		// Clamp, si on sort du cadre
 		if s.X < 0 { s.X = 0 }
 		if s.X > MaxX { s.X = MaxX }
 		if s.Y < 0 { s.Y = 0 }
 		if s.Y > MaxY { s.Y = MaxY }
 
-	case 1: // Taille
+	case 1: // Taille de la forme, on la modifie (toujours entre min et max radius)
 		s.Radius += rand.Intn(11) - 5
 		if s.Radius < MinRadius { s.Radius = MinRadius }
 		if s.Radius > currentMaxRadius { s.Radius = currentMaxRadius }
 
-	case 2: // Couleur
+	case 2: // Couleur (changement aléatoire et souvent distinct)
 		switch rand.Intn(4) {
 		case 0: s.Color.R = uint8(rand.Intn(256))
 		case 1: s.Color.G = uint8(rand.Intn(256))
@@ -273,7 +273,7 @@ func Mutate(o *Organism, target *image.RGBA, progress float64) {
 func (o Organism) Copy() Organism {
 	newOrg := Organism{
 		Score: o.Score,
-		DNA:   make([]Shape, len(o.DNA)),
+		DNA:   make([]Shape, len(o.DNA)), //on doit allouer espace tableau
 	}
 	copy(newOrg.DNA, o.DNA)
 	return newOrg
