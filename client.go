@@ -42,15 +42,15 @@ func LaunchClient(serverAddr string) {
 			// On part toujours du meilleur candidat connu (local ou serveur)
 			candidate := bestLocalCandidate // Copie simple car Organism ne contient pas de pointeurs complexes (sauf slice DNA)
 			
-			// Attention : Il faut cloner le DNA pour ne pas modifier l'original par erreur
-			// Go est tricky avec les slices :
+			// Il faut cloner le DNA pour ne pas modifier l'original par erreur
+			// Go est tricky avec les slices : CEST QUOI LES SLICES QQUN POUR EXPLIQUER SVP
 			newDNA := make([]Shape, len(bestLocalCandidate.DNA))
 			copy(newDNA, bestLocalCandidate.DNA)
 			candidate.DNA = newDNA
 
 			// Mutation
 			progress := float64(len(candidate.DNA)) / TargetComplexity
-			if progress > 1.0 { progress = 1.0 }
+			if progress > 1.0 { progress = 1.0 } //On a atteint le nombre de formes atteintes
 			Mutate(&candidate, targetImg, progress)
 
 			// Rendu
