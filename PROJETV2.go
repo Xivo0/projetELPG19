@@ -5,7 +5,7 @@ import (
 	"image"
 	"image/color"
 	"image/draw"
-	_ "image/jpeg" // Support JPEG
+	_ "image/jpeg" // Support JPEGOn n'utilise pas directement les fonctions de jpeg dans le code, mais on a besoin que la librairie s'initialise (elle appelle sa fonction init()) pour s'enregistrer comme format décodable.
 	"image/png"    // Support PNG
 	"math/rand"
 	"os"
@@ -18,7 +18,7 @@ import (
 // ==========================================
 
 const (
-	InputFile        = "target.png"    // Ton image source
+	InputFile        = "target.png"    // l'image source
 	OutputFile       = "evolution.png" // Le résultat
 	SaveFrequency    = 100             // Sauvegarde toutes les X générations
 	MinRadius        = 3               // Taille min forme
@@ -37,7 +37,7 @@ var (
 	MaxY int
 )
 
-// Shape : Supporte maintenant un Type (Cercle ou Rectangle)
+// structure pour une forme
 type Shape struct {
 	Type   int        // 0: Cercle, 1: Rectangle
 	X, Y   int        // Centre
@@ -64,7 +64,7 @@ type Result struct {
 // 2. FONCTIONS MÉTIERS OPTIMISÉES
 // ==========================================
 
-// ComputeAverageColor calcule la couleur moyenne de l'image cible.
+// ComputeAverageColor parcourt tous les pixels de l'image cible (boucle X et Y), additionne le Rouge, Vert, Bleu, et divise par le nombre total de pixels.
 // Cela permet de commencer avec un fond qui n'est pas noir, mais "moyen".
 func ComputeAverageColor(img *image.RGBA) color.RGBA {
 	var r, g, b, count uint64
@@ -90,7 +90,8 @@ func NewRandomShape(target *image.RGBA) Shape {
 	x := rand.Intn(MaxX)
 	y := rand.Intn(MaxY)
 
-	// Optimisation : accès direct mémoire pour piquer la couleur
+	// accès direct mémoire pour piquer la couleur au lieu de prendre une couleur 100% aléatoire,
+	//on regarde l'image cible à la position (X, Y) où on va poser la forme, et on prend cette couleur.
 	offset := (y * target.Stride) + (x * 4)
 	r := target.Pix[offset]
 	g := target.Pix[offset+1]
@@ -110,15 +111,16 @@ func NewRandomShape(target *image.RGBA) Shape {
 	}
 }
 
-// RenderToBuffer : Dessine l'ADN sur une image existante (Pas d'allocation mémoire en recalculant une image, une "image effacable par worker")
+// RenderToBuffer : Dessine l'ADN sur une image existante (Pas d'allocation mémoire !)
 func RenderToBuffer(dna []Shape, img *image.RGBA, bg color.RGBA) {
 	// 1. Reset rapide du fond (memset style)
-	bgR, bgG, bgB := bg.R, bg.G, bg.B
-	for i := 0; i < len(img.Pix); i += 4 { // RGBA = 4 bytes (ici des itérations) par pixel
-		img.Pix[i+0] = bgR 
+	bgR, bgG, bgB := bg.R, bg.G, bg.B// On stocke les composantes de la couleur de fond dans des variables locales
+    // pour éviter d'accéder à la structure `bg` à chaque tour de boucle
+	for i := 0; i < len(img.Pix); i += 4 {// On parcourt tout le tableau de pixels de l'image
+		img.Pix[i+0] = bgR
 		img.Pix[i+1] = bgG
 		img.Pix[i+2] = bgB
-		img.Pix[i+3] = 255 // Alpha opaque
+		img.Pix[i+3] = 255 // Opaque
 	}
 
 	// 2. Dessin des formes
