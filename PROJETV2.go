@@ -324,35 +324,35 @@ func Worker(id int, jobs <-chan Job, results chan<- Result, targetImg *image.RGB
 // 4. MAIN
 // ==========================================
 
-func main() {
+unc main() {
 	// 1. Initialisation
-	rand.Seed(time.Now().UnixNano())
+	rand.Seed(time.Now().UnixNano())// Initialise le générateur pseudo-aléatoire global : faire en sorte qu'il n'y ai pas a chaque fois EXACTEMENT la même évolution
 
-	targetImg := LoadImage(InputFile)
-	bounds := targetImg.Bounds()
-	MaxX, MaxY = bounds.Dx(), bounds.Dy()
+	targetImg := LoadImage(InputFile)// charge l'image (image RGBA)
+	bounds := targetImg.Bounds()//Récupère le rectangle de l’image (contient Min et Max de X et Y)
+	MaxX, MaxY = bounds.Dx(), bounds.Dy()// largeur et hauteur pour génération aléatoire, rendu rapide...
 
-	fmt.Printf("Cible: %dx%d | CPU: %d\n", MaxX, MaxY, runtime.NumCPU())
+	fmt.Printf("Cible: %dx%d | CPU: %d\n", MaxX, MaxY, runtime.NumCPU())// informatif: taille de l'image/ nombre de coeur dispo
 
 	// 2. Calcul de la couleur moyenne pour le fond
-	avgColor := ComputeAverageColor(targetImg)
-	fmt.Printf("Couleur de fond moyenne calculée: R%d G%d B%d\n", avgColor.R, avgColor.G, avgColor.B)
+	avgColor := ComputeAverageColor(targetImg)// Calcule la couleur moyenne de l’image cible
+	fmt.Printf("Couleur de fond moyenne calculée: R%d G%d B%d\n", avgColor.R, avgColor.G, avgColor.B)// informe l'utilisateur de la cohérence entre couleur moyenne du fond et de l'image 
 
 	// 3. Canaux et Workers
-	nbWorkers := runtime.NumCPU()
-	jobs := make(chan Job, nbWorkers)
-	results := make(chan Result, nbWorkers)
+	nbWorkers := runtime.NumCPU()// 1 workers par coeur CPU
+	jobs := make(chan Job, nbWorkers)// Job envoie des mutation  
+	results := make(chan Result, nbWorkers)// les scores 
 
 	for w := 1; w <= nbWorkers; w++ {
-		go Worker(w, jobs, results, targetImg, avgColor)
+		go Worker(w, jobs, results, targetImg, avgColor)// ici on lance les go routine (worker avec buffer, image privé, pas d'alloc répétée et indépendant) 
 	}
 
 	// 4. Premier Organisme (Vide mais avec le bon score initial)
 	// On crée une image vide avec la couleur de fond pour calculer le score de départ
-	startImg := image.NewRGBA(bounds)
-	emptyDNA := []Shape{}
-	RenderToBuffer(emptyDNA, startImg, avgColor) // Juste le fond
-	startScore := DiffEuclidienne(startImg, targetImg)
+	startImg := image.NewRGBA(bounds)// creation image vide meme taille que l'image cible 
+	emptyDNA := []Shape{}// ADN vide que le fond 
+	RenderToBuffer(emptyDNA, startImg, avgColor) // Juste le fond moyen pas de forme 
+	startScore := DiffEuclidienne(startImg, targetImg)// calcule score initiale 
 
 	currentBest := Organism{
 		DNA:   emptyDNA,
@@ -363,22 +363,22 @@ func main() {
 	SaveOutput(currentBest.Image) // Sauvegarde de l'état initial (fond uni)
 
 	// 5. Boucle Principale
-	generation := 0
-	startTime := time.Now()
-	lastPrint := time.Now()
+	generation := 0 // compteur du nombre de générations
+	startTime := time.Now()//sert à calculer les FPS (générations par seconde)
+	lastPrint := time.Now()//permet de limiter l’affichage console à 1 fois par seconde
 
 	for {
 		generation++
 
 		// Envoi des jobs
 		for i := 0; i < nbWorkers; i++ {
-			jobs <- Job{BestOrganism: currentBest}
+			jobs <- Job{BestOrganism: currentBest}//Tu envoies nbWorkers jobs Chaque job contient une copie logique du meilleur organisme actuel
 		}
 
 		// Réception des résultats
-		bestOfRound := currentBest
-		improved := false
-
+		bestOfRound := currentBest//meilleur organisme trouvé dans cette génération
+		improved := false//indique si au moins une amélioration a été trouvée
+		// comparaison des resultats des différents workers et changement du bestofround et de l'atat de improved 
 		for i := 0; i < nbWorkers; i++ {
 			res := <-results
 			if res.IsBetter {
@@ -395,11 +395,11 @@ func main() {
 		}
 
 		// Feedback console (toutes les secondes)
-		if time.Since(lastPrint) > 1*time.Second {
+		if time.Since(lastPrint) > 1*time.Second { // empeche le spam console et verifie si 1sec est passé 
 			fmt.Printf("[Gen %d] Formes: %d | Score: %.0f | FPS: %.0f\n", 
 				generation, len(currentBest.DNA), currentBest.Score, float64(generation)/time.Since(startTime).Seconds())
-			lastPrint = time.Now()
-		}
+			lastPrint = time.Now()// Réinitialise le timer d’affichage
+		}//Gen : numéro de génération Formes : complexité actuelle (nombre de formes) Score : distance euclidienne à l’image cible FPS : générations par seconde
 
 		// Sauvegarde Image
 		if improved && generation%SaveFrequency == 0 {
@@ -409,27 +409,27 @@ func main() {
 }
 
 // Helpers...
-func LoadImage(path string) *image.RGBA {
-	f, err := os.Open(path)
+func LoadImage(path string) *image.RGBA {// charge une image depuis le disque et retourne une image *RGBA
+	f, err := os.Open(path)// ouvre le fichier image 
 	if err != nil {
 		fmt.Println("Erreur chargement:", err, "-> Création image test")
-		return image.NewRGBA(image.Rect(0, 0, 200, 200))
+		return image.NewRGBA(image.Rect(0, 0, 200, 200))// au cas ou si image n'existe pas en crée une vide 200x200
 	}
-	defer f.Close()
-	src, _, err := image.Decode(f)
+	defer f.Close() // ferme fichier a la fin de la func
+	src, _, err := image.Decode(f)// decode les png JPEG...
 	if err != nil {
-		return image.NewRGBA(image.Rect(0, 0, 200, 200))
+		return image.NewRGBA(image.Rect(0, 0, 200, 200))// meme securiter si fail decodage 
 	}
 	b := src.Bounds()
-	rgba := image.NewRGBA(b)
-	draw.Draw(rgba, b, src, b.Min, draw.Src)
+	rgba := image.NewRGBA(b)//Crée une image RGBA exactement de la même taille
+	draw.Draw(rgba, b, src, b.Min, draw.Src)//Copie les pixels de l’image source vers le buffer RGBA Conversion implicite vers RGBA
 	return rgba
 }
 
-func SaveOutput(img *image.RGBA) {
+func SaveOutput(img *image.RGBA) {//sauvegarde l'image final du disque 
 	if img == nil { return }
-	f, err := os.Create(OutputFile)
+	f, err := os.Create(OutputFile)//Crée (ou écrase) evolution.png
 	if err != nil { return }
-	defer f.Close()
-	png.Encode(f, img)
+	defer f.Close()//garantit la fermeture du fichier même en cas de return même si le code évolue
+	png.Encode(f, img)//Encode l’image RGBA en PNG, Écrit les pixels sur disque
 }
