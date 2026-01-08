@@ -130,7 +130,7 @@ func RenderToBuffer(dna []Shape, img *image.RGBA, bg color.RGBA) {
 }
 
 func drawShape(img *image.RGBA, s Shape) { //on dessine une forme sur l'image
-	// Bounding Box : au lieu de parcourir toute l'image (et perdre du temps de calcul), on se limite au carré minimal qui contient la forme
+	// Bounding Box : au lieu de parcourir toute l'image (et perdre du temps de calcul), on se limite au carré minimal qui contient la forme pour la trouver
 	minX, maxX := s.X-s.Radius, s.X+s.Radius
 	minY, maxY := s.Y-s.Radius, s.Y+s.Radius
 
@@ -141,7 +141,7 @@ func drawShape(img *image.RGBA, s Shape) { //on dessine une forme sur l'image
 	if minY < 0 {
 		minY = 0
 	}
-	if maxX > bounds.Max.X { // Si la forme dépasse, on clamp : ie on ne sort pas de l'image
+	if maxX > bounds.Max.X { // Si la forme dépasse, on clamp : ie on ne sort pas de l'image (eviter les index out of bounds)
 		maxX = bounds.Max.X
 	}
 	if maxY > bounds.Max.Y {
@@ -162,7 +162,7 @@ func drawShape(img *image.RGBA, s Shape) { //on dessine une forme sur l'image
 		dy2 := dy * dy // Carré de la distance verticale
 
 		for x := minX; x < maxX; x++ {
-			// Logique Géométrique pour vérifier si on est dans la forme
+			// Logique Géométrique pour vérifier si on est dans la forme (la distance du pixel au centre doit être inférieure au rayon du cercle)
 			if s.Type == ShapeTypeCircle {
 				dx := x - s.X //
 				if dx*dx+dy2 > radiusSq {
@@ -171,7 +171,7 @@ func drawShape(img *image.RGBA, s Shape) { //on dessine une forme sur l'image
 			}
 			// Si Rectangle, on dessine tout ce qui est dans la boucle
 
-			// Logique de Blending (Mélange) : on veux du "alpha blending" pour gérer la transparence
+			// Logique de Blending (Mélange) : on veux du "alpha blending" pour gérer la transparence (faire une transition plus douche d'une couleur vers une autre)
 			offset := lineOffset + (x * 4) // Position du  (x,y) dans Pix[]
 
 			// Formule: (Src * A + Dst * (255-A)) / 255 ou Src et Dst sont les couleurs source et destination
@@ -179,7 +179,7 @@ func drawShape(img *image.RGBA, s Shape) { //on dessine une forme sur l'image
 			g := (srcG*alpha + int(img.Pix[offset+1])*invAlpha) / 255
 			b := (srcB*alpha + int(img.Pix[offset+2])*invAlpha) / 255
 
-			img.Pix[offset+0] = uint8(r)
+			img.Pix[offset+0] = uint8(r) //On modifie la couleur du pixel (x,y) avec celles obtenues (un pixel prends 4 octets de couleurs + transparence)
 			img.Pix[offset+1] = uint8(g)
 			img.Pix[offset+2] = uint8(b)
 			// Alpha reste 255 (image finale opaque)
