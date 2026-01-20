@@ -1,0 +1,72 @@
+body {
+    background-color: #f4f7f6; /* La couleur de fond (gris très clair) */
+    font-family: sans-serif;   /* Une police moderne sans "petits traits" */
+    display: flex;             /* Active le rangement flexible */
+    justify-content: center;   /* Centre le contenu horizontalement */
+    align-items: center;       /* Centre le contenu verticalement */
+    height: 100vh;             /* Prend toute la hauteur de l'écran */
+    margin: 0;                 /* Supprime les marges par défaut du navigateur */
+}
+
+/* --- LE CONTENEUR (la boîte blanche) --- */
+.main-container {
+    background: white;         /* Fond blanc pour la boîte */
+    padding: 30px;             /* Espace entre le bord et le texte (coussin interne) */
+    border-radius: 20px;       /* Arrondit les coins de la boîte */
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1); /* Ajoute une ombre douce */
+    text-align: center;        /* Aligne tout le texte au milieu */
+    width: 350px;              /* Fixe la largeur de la boîte */
+}
+
+/* --- LE TITRE --- */
+.game-title {
+    color: #2c3e50;            /* Une couleur bleu-gris foncé */
+    margin-top: 0;             /* Enlève l'espace vide au-dessus du titre */
+}
+
+/* --- LA ZONE DE DÉFINITION --- */
+.definition-box {
+    background: #eef2f3;       /* Un fond légèrement différent pour la zone texte */
+    padding: 15px;             /* Donne de l'air au texte */
+    border-radius: 10px;       /* Arrondit les coins */
+    font-style: italic;        /* Met le texte en italique */
+    margin-bottom: 20px;       /* Espace vide sous la boîte */
+}
+
+/* --- LE CHAMP DE SAISIE (INPUT) --- */
+.input-field {
+    padding: 10px;             /* Rend la zone de saisie plus épaisse */
+    border: 2px solid #ddd;    /* Une bordure grise fine */
+    border-radius: 8px;        /* Coins arrondis */
+    width: 200px;              /* Largeur du champ */
+    outline: none;             /* Enlève le contour bleu quand on clique */
+}
+
+/* Change la couleur de la bordure quand on clique pour taper */
+.input-field:focus {
+    border-color: #3498db;     /* La bordure devient bleue */
+}
+
+/* --- LE BOUTON VÉRIFIER --- */
+.btn-verify {
+    background-color: #3498db; /* Couleur bleue */
+    color: white;              /* Texte en blanc */
+    padding: 10px 20px;        /* Taille du bouton */
+    border: none;              /* Enlève la bordure par défaut */
+    border-radius: 8px;        /* Coins arrondis */
+    cursor: pointer;           /* La souris devient une "main" */
+    margin-left: 10px;         /* Espace avec l'input à gauche */
+    transition: 0.3s;          /* Animation douce de 0.3 secondes */
+}
+
+/* Change le bouton quand la souris passe dessus */
+.btn-verify:hover {
+    background-color: #2980b9; /* Devient un bleu plus foncé */
+    transform: scale(1.05);    /* Grossit très légèrement */
+}
+
+/* --- LE MESSAGE DE RÉSULTAT --- */
+.status-message {
+    font-weight: bold;         /* Met le texte en gras */
+    margin: 15px 0;            /* Espace en haut et en bas */
+}
