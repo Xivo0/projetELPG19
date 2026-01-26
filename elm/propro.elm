@@ -1,4 +1,4 @@
-module PROJETV4 exposing (..)
+module propro exposing (..)
 
 import Browser
 import Html exposing (Html, button, div, text, input, h3, p, br, ul, li) -- J'ai ajouté ul et li ici
@@ -182,3 +182,4 @@ view model =
                 button [ class "btn-cheat", onClick BasculerSecret ] [ text "Afficher la réponse (Triche)" ]
             ]
         ]]
+
