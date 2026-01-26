@@ -3,3 +3,4 @@ Un jeu de devinette interactif développé en **Elm**. Le programme charge une l
 - **Chargement dynamique** : Récupère une liste de mots depuis un fichier `words.txt`.
 - **Intégration API** : Utilise l'API [Free Dictionary](https://dictionaryapi.dev/) pour afficher les définitions en temps réel.
 - **Mode Triche** : Possibilité d'afficher/cacher le mot secret pour les joueurs en difficulté.
+- **Compiler** : Bien penser à heberger un serveur en local sur le port 8000 (via python par exemple.)
