@@ -8,5 +8,5 @@ Un jeu de devinette interactif développé en **Elm**. Le programme charge une l
 
              -Rajouter la ligne : <link rel="stylesheet" href="style.css"> dans le </head> du index2.html
 
-             -heberger un serveur local sur le port 8000.
+             -Heberger un serveur local sur le port 8000.
   
