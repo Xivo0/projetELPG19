@@ -1,14 +1,17 @@
 const net = require('net');
 
 // --- DONNÉES ET FONCTIONS DU JEU (Inchangées) ---
-function creerCarte(type, valeur, nom, effect = null) { return { type, valeur, nom, effect }; }
+function creerCarte(type, valeur, nom, effect = null) { 
+    return { type, valeur, nom, effect }; 
+}
 
 function genererPaquet() {
     let paquet = [];
     paquet.push(creerCarte('nombre', 0, '0')); 
     paquet.push(creerCarte('nombre', 1, '1')); 
     for (let i = 2; i <= 12; i++) {
-        for (let j = 0; j < i; j++) paquet.push(creerCarte('nombre', i, i.toString()));
+        for (let j = 0; j < i; j++) 
+            paquet.push(creerCarte('nombre', i, i.toString()));
     }
     paquet.push(creerCarte('modifier', 2, '+2'));
     paquet.push(creerCarte('modifier', 4, '+4'));
@@ -24,23 +27,30 @@ function genererPaquet() {
 
 function melangerPaquet(paquet) {
     for (let i = paquet.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
+        const j = Math.floor(Math.random() * (i + 1)); //on aura jamais i == j
         [paquet[i], paquet[j]] = [paquet[j], paquet[i]];
     }
     return paquet;
 }
 
-function calculerScore(main, aFaitFlip7) {
-    let sommeNombres = 0, sommeBonus = 0, aMultiplicateur = false;
+function calculerScore(main, aFaitFlip7) { // Une fois que le joueur a fini de tirer, on calcule ce qu'il gagne
+    let sommeNombres = 0;
+    let sommeBonus = 0;
+    let aMultiplicateur = false;
     for (const carte of main) {
-        if (carte.type === 'nombre') sommeNombres += carte.valeur;
-        else if (carte.type === 'modifier') sommeBonus += carte.valeur;
-        else if (carte.type === 'multiplicateur') aMultiplicateur = true;
+        if (carte.type === 'nombre') 
+            sommeNombres += carte.valeur;
+        else if (carte.type === 'modifier') 
+            sommeBonus += carte.valeur;
+        else if (carte.type === 'multiplicateur') 
+            aMultiplicateur = true;
     }
     let scoreTotal = sommeNombres;
-    if (aMultiplicateur) scoreTotal *= 2;
+    if (aMultiplicateur) 
+        scoreTotal *= 2;
     scoreTotal += sommeBonus;
-    if (aFaitFlip7) scoreTotal += 15;
+    if (aFaitFlip7) 
+        scoreTotal += 15;
     return scoreTotal;
 }
 
@@ -48,20 +58,22 @@ function calculerScore(main, aFaitFlip7) {
 
 function broadcast(joueurs, message) {
     joueurs.forEach(j => {
-        if(!j.socket.destroyed) j.socket.write(message + '\n');
+        if(!j.socket.destroyed) 
+            j.socket.write(message + '\n');
     });
     console.log(message);
 }
 
 function tell(joueur, message) {
-    if(!joueur.socket.destroyed) joueur.socket.write(message + '\n');
+    if(!joueur.socket.destroyed) 
+        joueur.socket.write(message + '\n');
 }
 
 function demanderAuJoueur(joueur, question) {
-    return new Promise((resolve) => {
+    return new Promise((resolve) => { 
         tell(joueur, question);
         // On écoute une seule fois ('once') la réponse
-        joueur.socket.once('data', (data) => {
+        joueur.socket.once('data', (data) => { // fonction qui s'exécute une fois qu'on a reçu réponse joueur (o ou n)
             resolve(data.toString().trim().toLowerCase());
         });
     });
@@ -78,7 +90,7 @@ async function jouerTour(joueur, tousLesJoueurs, paquet) {
     let cartesAPiocherForcees = 0;
 
     while (true) {
-        if (cartesAPiocherForcees === 0) {
+        if (cartesAPiocherForcees === 0) { // Pour la pioche de flip 3
             tell(joueur, `Votre main: ${calculerScore(main, false)} pts.`);
             let reponse = await demanderAuJoueur(joueur, "Piocher ? (o/n) : ");
             
@@ -86,12 +98,16 @@ async function jouerTour(joueur, tousLesJoueurs, paquet) {
                 broadcast(tousLesJoueurs, `${joueur.nom} décide de s'arrêter.`);
                 break; 
             }
-        } else {
+        } 
+        else {
             broadcast(tousLesJoueurs, `> ${joueur.nom} doit piocher (Reste: ${cartesAPiocherForcees})`);
             cartesAPiocherForcees--;
         }
 
-        if (paquet.length === 0) { broadcast(tousLesJoueurs, "Paquet vide !"); break; }
+        if (paquet.length === 0) { 
+            broadcast(tousLesJoueurs, "Paquet vide !"); 
+            break;
+        }
         
         const carte = paquet.shift();
         main.push(carte);
@@ -111,24 +127,25 @@ async function jouerTour(joueur, tousLesJoueurs, paquet) {
                     
                     // CORRECTION : On applique la règle de défausse 
                     
-                    // 1. On retire le doublon qu'on vient d'ajouter (c'est la dernière carte de 'main')
+                    // On retire le doublon qu'on vient d'ajouter (c'est la dernière carte de 'main')
                     main.pop(); 
 
-                    // 2. On cherche et on retire la carte "SECONDE CHANCE" de la main
+                    // On cherche et on retire la carte "SECONDE CHANCE" de la main
                     const indexSC = main.findIndex(c => c.effect === 'second_chance');
                     if (indexSC !== -1) {
                         main.splice(indexSC, 1); // On la supprime
                     }
 
-                    // 3. On désactive le bouclier
+                    // On désactive le bouclier
                     aSecondeChance = false;
 
-                    // Note : Le score ne doit PAS augmenter.
-                } else {
+                } 
+                else {
                     broadcast(tousLesJoueurs, `   💥 Doublon (${carte.valeur}) ! Tour perdu.`);
                     return 0;
                 }
-            } else {
+            } 
+            else {
                 nombresUniques.push(carte.valeur);
             }
         }
@@ -169,7 +186,8 @@ async function lancerPartie(joueursConnectes) {
             broadcast(joueursConnectes, `>>> Total ${joueursConnectes[i].nom} : ${scores[i]}`);
         }
 
-        if (scores.some(s => s >= 200)) partieTerminee = true;
+        if (scores.some(s => s >= 200)) 
+            partieTerminee = true;
         else round++;
     }
 
@@ -208,7 +226,8 @@ const server = net.createServer((socket) => {
     if (joueursEnAttente.length === 1) {
         socket.write(`Bienvenue ${nomJoueur} ! Vous êtes l'Hôte.\n`);
         socket.write(`Attendez que tout le monde soit là, puis tapez START pour lancer.\n`);
-    } else {
+    } 
+    else {
         socket.write(`Bienvenue ${nomJoueur} ! En attente de l'Hôte pour lancer la partie...\n`);
         // On prévient tout le monde qu'un nouveau est arrivé
         broadcast(joueursEnAttente, `>> ${nomJoueur} a rejoint la partie (${joueursEnAttente.length} joueurs).`);
@@ -217,7 +236,8 @@ const server = net.createServer((socket) => {
     // ÉCOUTEUR DU LOBBY (Pour détecter "START")
     socket.on('data', (data) => {
         // On ignore les messages si le jeu a commencé (car c'est lancerPartie qui gère)
-        if (jeuEnCours) return;
+        if (jeuEnCours) 
+            return;
 
         const message = data.toString().trim();
         
@@ -225,7 +245,8 @@ const server = net.createServer((socket) => {
         if (joueur === joueursEnAttente[0] && message.toUpperCase() === 'START') {
             if (joueursEnAttente.length < 1) {
                 socket.write("Il faut au moins 1 joueur pour commencer !\n");
-            } else {
+            } 
+            else {
                 console.log("Lancement de la partie !");
                 lancerPartie(joueursEnAttente);
             }
