@@ -14,6 +14,8 @@ const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout
 });
+// On définit le look du curseur au début
+rl.setPrompt('Flip7 > ');
 
 client.connect(PORT, HOST, () => {
     console.log('Connecté au serveur Flip 7 !');
@@ -22,6 +24,7 @@ client.connect(PORT, HOST, () => {
 // Quand le serveur nous parle
 client.on('data', (data) => {
     console.log(data.toString());
+    rl.prompt();
 });
 
 // Quand le serveur coupe la connexion
