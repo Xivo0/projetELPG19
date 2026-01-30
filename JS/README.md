@@ -1,0 +1,4 @@
+- Lancer au minimum 2 terminaux
+- Dans le premier, lancer server.js avec node server.js
+- Dans le deuxième, lancer client.js avec node client.js
+- Ordre de lancement : server.js → client.js
