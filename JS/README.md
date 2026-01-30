@@ -1,5 +1,5 @@
-- Lancer au minimum 2 terminaux
+- Lancer au minimum 2 terminaux (nombre de terminaux = 1 + nombre de joueurs )
 - Dans le premier, lancer server.js avec node server.js
-- Dans le deuxième, lancer client.js avec node client.js
+- Dans le deuxième, lancer client.js avec node client.js (pour un joueur)
 - Ordre de lancement : server.js → client.js
 - Le premier joueur connecté devra lancer le jeu en tapant "start"
