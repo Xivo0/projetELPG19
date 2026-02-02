@@ -10,9 +10,9 @@ import (
 	"os"
 )
 
-// ==========================================
+
 // CONFIGURATION GLOBALE
-// ==========================================
+
 const (
 	InputFile        = "target.png"    // Doit être présent chez tout le monde
 	OutputFile       = "evolution.png" // Créé par le serveur
@@ -28,12 +28,10 @@ var (
 	MaxY int
 )
 
-// ==========================================
 // STRUCTURES
-// ==========================================
 
 type Shape struct {
-	Type   int // 0: Cercle, 1: Rectangle  <-- AJOUT
+	Type   int // 0: Cercle, 1: Rectangle
 	X, Y   int
 	Radius int // Sert de "Demi-largeur" pour le carré
 	Color  color.RGBA
@@ -49,9 +47,7 @@ type NetworkMessage struct {
 	Organism Organism
 }
 
-// ==========================================
-// FONCTIONS MÉTIERS (V2 OPTIMISÉE)
-// ==========================================
+// FONCTIONS MÉTIERS
 
 func ComputeAverageColor(img *image.RGBA) color.RGBA {
 	var r, g, b, count uint64
@@ -168,7 +164,7 @@ func Mutate(o *Organism, target *image.RGBA) {
 		off := (y * target.Stride) + (x * 4)
 
 		newS := Shape{
-			Type: rand.Intn(2), // 0 ou 1 (Cercle ou Rectangle) <--- AJOUT
+			Type: rand.Intn(2), // 0 ou 1 (Cercle ou Rectangle)
 			X:    x, Y: y,
 			Radius: rand.Intn(MaxRadius-MinRadius) + MinRadius,
 			Color:  color.RGBA{target.Pix[off], target.Pix[off+1], target.Pix[off+2], uint8(rand.Intn(ShapeAlphaMax-ShapeAlphaMin) + ShapeAlphaMin)},
