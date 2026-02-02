@@ -31,7 +31,7 @@ func LaunchClient(serverAddr string) {
 	fmt.Printf("CPU Locaux: %d. Démarrage du pool local...\n", nbWorkers)
 
 	for {
-		// 1. Recevoir le "Chef d'oeuvre" du serveur
+		// Recevoir le "Chef d'oeuvre" du serveur
 		var msg NetworkMessage
 		err := decoder.Decode(&msg)
 		if err != nil {
@@ -40,7 +40,7 @@ func LaunchClient(serverAddr string) {
 
 		serverOrganism := msg.Organism
 
-		// 2. Lancer la compétition locale (Map-Reduce)
+		// Lancer la compétition locale (Map-Reduce)
 		// On utilise un WaitGroup pour attendre que tous les cœurs aient fini leur batch
 		var wg sync.WaitGroup
 		localResults := make(chan Organism, nbWorkers)
@@ -71,11 +71,11 @@ func LaunchClient(serverAddr string) {
 			}()
 		}
 
-		// 3. Attendre tout le monde
+		// Attendre tout le monde
 		wg.Wait()
 		close(localResults)
 
-		// 4. Trouver le meilleur parmi tous les workers locaux
+		// Trouver le meilleur parmi tous les workers locaux
 		bestOfBatch := serverOrganism
 		improved := false
 
@@ -86,7 +86,7 @@ func LaunchClient(serverAddr string) {
 			}
 		}
 
-		// 5. Renvoyer au serveur (seulement si on a trouvé mieux)
+		// Renvoyer au serveur (seulement si on a trouvé mieux)
 		if improved {
 			// fmt.Printf("Amélioration locale trouvée (%.0f)\n", bestOfBatch.Score)
 			encoder.Encode(NetworkMessage{Organism: bestOfBatch})
