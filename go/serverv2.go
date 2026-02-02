@@ -53,7 +53,7 @@ func handleClient(conn net.Conn, gen *int) {
 	saveBuffer := image.NewRGBA(image.Rect(0, 0, MaxX, MaxY))
 
 	for {
-		// A. Envoyer le Best actuel au client
+		// Envoyer le Best actuel au client
 		bestMutex.Lock()
 		err := enc.Encode(NetworkMessage{Organism: bestOrganism})
 		bestMutex.Unlock()
@@ -61,14 +61,14 @@ func handleClient(conn net.Conn, gen *int) {
 			return
 		}
 
-		// B. Attendre le retour du client
+		// Attendre le retour du client
 		var msg NetworkMessage
 		err = dec.Decode(&msg)
 		if err != nil {
 			return
 		}
 
-		// C. Mettre à jour si mieux
+		// Mettre à jour si mieux
 		bestMutex.Lock()
 		if msg.Organism.Score < bestOrganism.Score {
 			*gen++
