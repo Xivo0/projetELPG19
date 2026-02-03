@@ -1,4 +1,4 @@
-- **fichiers** : Verifier d'avoir tout les fichiers (clientv2.go;commonv2.go;mainv2.go;serverv2.go;target.png) dans le meme dossier.
+- **Fichiers** : Verifier d'avoir tout les fichiers (clientv2.go;commonv2.go;mainv2.go;serverv2.go;target.png) dans le meme dossier.
 - **Lancement**:
 Ouvrez un terminal pour le serveur, puis un ou plusieurs autres terminaux pour les clients (workers):
 - Terminal 1 (Serveur), Lancez la commande suivante: go run . -mode server
