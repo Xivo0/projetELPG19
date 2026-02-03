@@ -139,7 +139,7 @@ func DiffEuclidienne(img1, img2 *image.RGBA) float64 {
 		d1 := int(img1.Pix[i]) - int(img2.Pix[i])
 		d2 := int(img1.Pix[i+1]) - int(img2.Pix[i+1])
 		d3 := int(img1.Pix[i+2]) - int(img2.Pix[i+2])
-		total += float64(d1*d1 + d2*d2 + d3*d3)
+		total += float64(d1*d1*d1*3 + d2*d2*4 + d3*d3*2)
 	}
 	return total
 }
