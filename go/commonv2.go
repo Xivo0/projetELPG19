@@ -18,13 +18,13 @@ const (
 	OutputFile       = "evolution.png" // Créé par le serveur
 	MinRadius        = 3
 	MaxRadius        = 50
-	TargetComplexity = 5000.0
+	TargetComplexity = 5000.0 // Estimation du nombres de formes de l'image finale pour appliquer les heuristiques
 	ShapeAlphaMin    = 30
 	ShapeAlphaMax    = 200
 )
 
 var (
-	MaxX int
+	MaxX int // Val max des formes
 	MaxY int
 )
 
@@ -49,7 +49,7 @@ type NetworkMessage struct {
 
 // FONCTIONS MÉTIERS
 
-func ComputeAverageColor(img *image.RGBA) color.RGBA {
+func ComputeAverageColor(img *image.RGBA) color.RGBA { //Renvoie la couleur moyenne de l'image pour commencer avec un fond coloré et gagner du temps d'éxecution
 	var r, g, b, count uint64
 	bounds := img.Bounds()
 	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
@@ -64,7 +64,7 @@ func ComputeAverageColor(img *image.RGBA) color.RGBA {
 	return color.RGBA{uint8(r / count), uint8(g / count), uint8(b / count), 255}
 }
 
-func RenderToBuffer(dna []Shape, img *image.RGBA, bg color.RGBA) {
+func RenderToBuffer(dna []Shape, img *image.RGBA, bg color.RGBA) { 
 	bgR, bgG, bgB := bg.R, bg.G, bg.B
 	for i := 0; i < len(img.Pix); i += 4 {
 		img.Pix[i+0] = bgR
